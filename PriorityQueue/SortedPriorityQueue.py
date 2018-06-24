@@ -1,5 +1,5 @@
 from PositionalList import *
-from PriorityQueueBase import *
+from PriorityQueue.PriorityQueueBase import *
 
 class SortedPriorityQueue(PriorityQueueBase):
     def __init__(self):

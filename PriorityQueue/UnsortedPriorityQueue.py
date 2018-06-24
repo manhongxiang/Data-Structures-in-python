@@ -1,4 +1,4 @@
-from PriorityQueueBase import PriorityQueueBase
+from PriorityQueue.PriorityQueueBase import PriorityQueueBase
 from PositionalList import *
 
 class UnsortedPriorityQueue(PriorityQueueBase):

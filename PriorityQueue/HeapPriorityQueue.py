@@ -1,4 +1,4 @@
-from PriorityQueueBase import *
+from PriorityQueue.PriorityQueueBase import *
 
 class HeapPriorityQueue(PriorityQueueBase):
     def __init__(self, seq=[]):
