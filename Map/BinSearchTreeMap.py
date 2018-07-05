@@ -15,6 +15,7 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         if self.is_empty():
             raise KeyError(key)
         p = self._subtree_search(self.root(), key)
+        self._rebalance_access(p)
         if p.key() != key:
             raise KeyError(key)
         else:
@@ -26,11 +27,14 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         else:
             p = self._subtree_search(self.root(), key)
             if p.key() == key:
-                p._node._item._value = value
+                p._node._element._value = value
+                self._rebalance_access(p)
+                return
             elif key < p.key():
-                self._add_left(p, self._Item(key, value))
+                p = self._add_left(p, self._Item(key, value))
             else:
-                self._add_right(p, self._Item(key, value))
+                p = self._add_right(p, self._Item(key, value))
+            self._rebalance_insert(p)
 
     def delete(self, p):
         element = p.element()
@@ -38,8 +42,10 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
             replace = self.before(p)
             self._replace(p, replace.element())
             self._replace(replace, element)
-        else:
-            self._delete(p)
+            p = replace
+        parent = self.parent(p)
+        self._delete(p)
+        self._rebalance_delete(parent)
         return element
 
     def __delitem__(self, key):
@@ -47,6 +53,7 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
             raise KeyError(key)
         p = self._subtree_search(self.root(), key)
         if p.key() != key:
+            self._rebalance_access(p)
             raise KeyError(key)
         else:
             self.delete(p)
@@ -78,6 +85,7 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         if self.right(p):
             return self._subtree_first_postion(self.right(p))
         else:
+            walk = p
             above = self.parent(p)
             while above is not None and walk == self.right(above):
                 walk = above
@@ -111,7 +119,16 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         return (p.key(), p.value()) if p is not None else None
 
     def find_range(self, start, stop):
-        pass
+        if self.is_empty():
+            raise Exception("try to iter an empty map")
+        start_p = self._subtree_search(self.root(), start)
+        if start_p.key() < start:
+            start_p = self.before(start_p)
+        walk = start_p
+        while walk.key() <= stop:
+            yield walk.key(), walk.value()
+            walk = self.after(walk)
+
 
     #---------------------------nonpublic methods-----------------------------
     def _subtree_search(self, p, key):
@@ -122,6 +139,7 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
             return self._subtree_search(self.left(p), key)
         elif key > p.key() and self.right(p) is not None:
             return self._subtree_search(self.right(p), key)
+        # self._rebalance_access(p) #bing bu xu yao
         return p
 
     def _subtree_first_postion(self, p):
@@ -139,6 +157,47 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         while self.right(walk) is not None:
             walk = self.right(walk)
         return walk
+
+    #The methods below are for trees balancing
+    def _relink(self, parent, child, bLeft):
+        if bLeft:
+            parent._left = child
+        else:
+            parent._right = child
+        if child is not None:
+            child._parent = parent
+
+    def _rotate(self, p):
+        '''a single rotate operation, to make p over its parent'''
+        x = p._node
+        y = x._parent   #When calling this method, please make sure p is not the root
+        z = y._parent
+        bLeft = x is y._left
+        if bLeft:
+            self._relink(x, y, False)
+            self._relink(y, x._right, True)
+        else:
+            self._relink(y, x._left, False)
+            self._relink(x, y, True)
+        if z is not None:
+            self._relink(z, x, y is z._left)
+        else:   #During each operation, the "border situation" should be considered
+            self._root = x
+            x._parent = None
+
+    def _restructure(self, x):
+        y = self.parent(x)
+        z = self.parent(y)  #When calling this method, please be sure that x is not the root, or y is None, then an error occurs here
+        if z is None:
+            self._rotate(x)
+        else:
+            if (x == self.left(y)) == (y == self.left(z)):
+                self._rotate(y)
+                return y
+            else:
+                self._rotate(x)
+                self._rotate(x)
+                return x
 
     def _rebalance_access(self, p):
         pass
@@ -163,9 +222,14 @@ if __name__ == "__main__":
     a[5] = 5
     del a[3]
     del a[4]
+    del a[7]
     # del a[11]
     print("root height:", a.height(a.root()))
     print("len:", len(a))
     print("fist:", a.first().element(), "last:", a.last().element())
     for each in a:
+        print(each)
+
+    print("---------------------------------")
+    for each in a.find_range(2, 4):
         print(each)
