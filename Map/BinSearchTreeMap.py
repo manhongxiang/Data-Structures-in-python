@@ -174,8 +174,8 @@ class BinSearchTreeMap(LinkedBinaryTree, MapBase):
         z = y._parent
         bLeft = x is y._left
         if bLeft:
-            self._relink(x, y, False)
             self._relink(y, x._right, True)
+            self._relink(x, y, False)
         else:
             self._relink(y, x._left, False)
             self._relink(x, y, True)
